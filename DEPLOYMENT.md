@@ -39,3 +39,18 @@ Ejemplo: desplegar en Render desde GitHub
 // ...existing code...
 ## URL pública del despliegue desde este Codespace
 URL pública (temporal) del Codespace: https://blank-app-c3wpn0eaop9.streamlit.app/
+
+## Desplegar automáticamente en Render (opcional)
+
+Si quieres que el workflow de GitHub Actions despliegue automáticamente en Render tras publicar la imagen en GHCR, sigue estos pasos:
+
+1. Crea (o usa) un servicio en Render y obtén su Service ID (ej: `srv-xxxxx`).
+2. Genera una API key en Render con permisos para crear deploys.
+3. En GitHub, ve a Settings → Secrets → Repository secrets y añade dos secrets:
+   - `RENDER_API_KEY` — tu API key de Render.
+   - `RENDER_SERVICE_ID` — el ID del servicio en Render.
+
+Cuando los secrets están presentes, el workflow `.github/workflows/build-and-push.yml` llamará a la API de Render para disparar un deploy automáticamente después de publicar la imagen en `ghcr.io/${{ github.repository }}:latest`.
+
+Nota de seguridad: guarda las claves en los secrets del repositorio y no las expongas en el código. El workflow solo enviará la petición a Render si ambos secrets están definidos.
+
