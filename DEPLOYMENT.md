@@ -35,3 +35,7 @@ Ejemplo: desplegar en Render desde GitHub
 1. Push del repo a GitHub (branch `main`).
 2. El workflow build-and-push construirá y publicará la imagen en GHCR.
 3. En Render, crea un Web Service y en la sección "Docker / Container Registry" usa la imagen `ghcr.io/<OWNER>/<REPO>:latest`.
+
+// ...existing code...
+## URL pública del despliegue desde este Codespace
+URL pública (temporal) del Codespace: https://blank-app-c3wpn0eaop9.streamlit.app/
