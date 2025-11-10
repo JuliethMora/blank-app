@@ -6,7 +6,8 @@ WORKDIR /app
 
 # Instalar dependencias del sistema
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libpq-dev build-essential \
+    && apt-get install -y --no-install-recommends \
+       gcc libpq-dev build-essential unixodbc unixodbc-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements e instalar
@@ -22,4 +23,4 @@ EXPOSE 8501
 # Puerto por defecto (puedes sobrescribir con la variable de entorno PORT)
 ENV PORT=8501
 
-CMD ["streamlit", "run", "streamlit_app.py", "--server.port", "${PORT}", "--server.address", "0.0.0.0"]
+CMD ["bash", "-lc", "streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
