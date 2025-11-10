@@ -37,6 +37,17 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Trigger Render deploy
+        if: ${{ secrets.RENDER_API_KEY && secrets.RENDER_SERVICE_ID }}
+        run: |
+          echo "Triggering Render deploy for service ${{ secrets.RENDER_SERVICE_ID }}"
+          curl -sS -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache":true}' \
+            || (echo "Render deploy trigger failed" && exit 1)
 name: Build and publish Docker image
 
 on:
