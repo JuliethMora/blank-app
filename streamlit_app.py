@@ -112,6 +112,7 @@ if run_button:
             log_placeholder.text("".join(logs[-40:]))  # muestra últimas 40 líneas
         proc.wait()
 
+   # ...existing code...
     st.success("Ejecución completada ✅")
 
     # Mostrar outputs generados
@@ -121,26 +122,29 @@ if run_button:
     else:
         # Filtrar archivos cuyo nombre contenga 'output' (case-insensitive)
         outputs_with_keyword = [f for f in all_outputs if 'output' in f.name.lower()]
-        # Si no hay archivos que contengan 'output', usar todos
-        chosen = outputs_with_keyword if outputs_with_keyword else all_outputs
-        # Limitar a máximo 3 archivos
-        chosen = sorted(chosen, key=lambda p: p.name)[:3]
+
+        # Si hay archivos que contengan 'output', usarlos (hasta 3). Si no, usar hasta 3 cualquiera.
+        if outputs_with_keyword:
+            chosen = sorted(outputs_with_keyword, key=lambda p: p.name)[:3]
+        else:
+            st.warning("No se detectaron archivos que contengan 'output'. Mostrando hasta 3 archivos generados.")
+            chosen = sorted(all_outputs, key=lambda p: p.name)[:3]
 
         st.subheader("📦 Archivos generados (hasta 3):")
         for f in chosen:
-            with open(f, "rb") as file:
-                st.download_button(
-                    label=f"Descargar {f.name}",
-                    data=file.read(),
-                    file_name=f.name,
-                    mime="application/octet-stream",
-                )
+            if f.exists():
+                with open(f, "rb") as file:
+                    st.download_button(
+                        label=f"Descargar {f.name}",
+                        data=file.read(),
+                        file_name=f.name,
+                        mime="application/octet-stream",
+                    )
 
-        # Botón adicional: empaquetar y descargar los hasta 3 archivos que contengan 'output' en el nombre
-        outputs_with_keyword = [f for f in all_outputs if 'output' in f.name.lower()]
-        chosen_for_zip = sorted(outputs_with_keyword, key=lambda p: p.name)[:3]
-        if chosen_for_zip:
+        # Crear zip solo si hay archivos que contengan 'output' (hasta 3)
+        if outputs_with_keyword:
             import zipfile
+            chosen_for_zip = sorted(outputs_with_keyword, key=lambda p: p.name)[:3]
             zip_path = tmp_dir / "outputs_top3.zip"
             # Crear zip solo con los archivos seleccionados
             with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
@@ -155,6 +159,4 @@ if run_button:
                     file_name=zip_path.name,
                     mime="application/zip",
                 )
-
-    #st.subheader("📜 Log de ejecución")
-    #st.code("".join(logs[-300:]) if logs else "Sin salida de log.")
+print(f"ETL execution completed")
