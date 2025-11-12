@@ -1,7 +1,9 @@
-name: Build and publish Docker image
+name: Build and Publish Docker Image
 
 on:
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
 
 permissions:
@@ -13,15 +15,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Clonar el repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Configurar QEMU (para builds multi-arquitectura)
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      # 3️⃣ Configurar Docker Buildx (para build avanzado)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 4️⃣ Iniciar sesión en GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -29,12 +35,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 5️⃣ Configurar metadatos (versionado automático)
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+            type=ref,event=branch
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+
+      # 6️⃣ Construir y publicar imagen Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          push: ${{ github.event_name != 'pull_request' }} # no publicar si es PR
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64 # útil si despliegas en varios entornos
+
+      # 7️⃣ (Opcional) Comprobación final
+      - name: Verify image built successfully
+        run: docker pull ghcr.io/${{ github.repository }}:latest
