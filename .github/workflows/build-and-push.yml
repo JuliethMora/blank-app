@@ -35,12 +35,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5️⃣ Configurar metadatos (versionado automático)
+      # 5️⃣ Configurar metadatos (versionado automático + minúsculas)
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          # Forzar minúsculas en nombre del repositorio
+          images: ghcr.io/${{ github.repository_owner,, }}/${{ github.event.repository.name }}
           tags: |
             type=raw,value=latest
             type=sha
@@ -48,17 +49,18 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
 
-      # 6️⃣ Construir y publicar imagen Docker
+      # 6️⃣ Construir y publicar la imagen Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }} # no publicar si es PR
+          push: ${{ github.event_name != 'pull_request' }} # Evita publicar desde PRs
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64 # útil si despliegas en varios entornos
+          platforms: linux/amd64,linux/arm64 # Multi-arquitectura
 
-      # 7️⃣ (Opcional) Comprobación final
+      # 7️⃣ Verificar que la imagen se subió correctamente (solo si no es PR)
       - name: Verify image built successfully
-        run: docker pull ghcr.io/${{ github.repository }}:latest
+        if: ${{ github.event_name != 'pull_request' }}
+        run: docker pull ghcr.io/${{ github.repository_owner,, }}/${{ github.event.repository.name }}:latest
